@@ -1,0 +1,48 @@
+# Dependencies — install fresh in container
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+.next
+out
+dist
+
+# Local env (set in Coolify panel)
+.env
+.env.local
+.env*.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Test
+coverage
+.nyc_output
+
+# Misc
+README.md
+*.md
+.eslintcache
+.next-env.d.ts
+
+# Docs / migration files don't need to be in the runtime image
+# (they're for the developer, not the app)
+supabase/migration_*.sql

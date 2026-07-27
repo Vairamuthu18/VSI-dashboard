@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SerpAPI Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #f0f2f5;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #4f46e5;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            background: #fafafa;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>Google AI Overview Test (SerpAPI)</h1>
+        <p>Enter a query to test the Google AI Overview integration directly.</p>
+
+        <textarea id="prompt" rows="4" placeholder="e.g. best crm for small business"></textarea>
+        <button id="btn" onclick="runTest()">Run Test</button>
+
+        <div class="status" id="status"></div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function runTest() {
+            const prompt = document.getElementById('prompt').value;
+            if (!prompt) return alert('Please enter a prompt');
+
+            const btn = document.getElementById('btn');
+            const status = document.getElementById('status');
+            const resultDiv = document.getElementById('result');
+
+            btn.disabled = true;
+            status.textContent = 'Sending request to SerpAPI...';
+            resultDiv.textContent = '';
+
+            try {
+                const response = await fetch('php/api.php?action=run_scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        platform: 'google'
+                    })
+                });
+
+                const data = await response.json();
+
+                status.textContent = 'Response Received:';
+
+                // Show JSON structure if needed, but prioritize the readable HTML response
+                const resultText = data.data.response_text || 'No text content';
+                resultDiv.innerHTML = resultText;
+
+                // Also log full JSON to console for debugging
+                console.log(data);
+
+            } catch (e) {
+                status.textContent = 'Error:';
+                resultDiv.textContent = e.toString();
+            }
+
+            btn.disabled = false;
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,36 @@
+[
+    {
+        "page_url": "/about",
+        "schema_types": [
+            "Organization",
+            "Person"
+        ],
+        "is_valid": true,
+        "last_checked": "2025-02-09"
+    },
+    {
+        "page_url": "/services/geo",
+        "schema_types": [
+            "Service"
+        ],
+        "is_valid": true,
+        "last_checked": "2025-02-09"
+    },
+    {
+        "page_url": "/blog/ai-trends",
+        "schema_types": [
+            "Article",
+            "FAQPage"
+        ],
+        "is_valid": true,
+        "last_checked": "2025-02-08"
+    },
+    {
+        "page_url": "/contact",
+        "schema_types": [
+            "ContactPage"
+        ],
+        "is_valid": false,
+        "last_checked": "2025-02-07"
+    }
+]

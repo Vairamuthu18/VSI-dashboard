@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesboxAI | AI Visibility Dashboard</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Premium Sidebar -->
+        <aside class="sidebar">
+            <div class="logo" style="margin-bottom: 2rem; text-align: center;">
+                <img src="assets/salesboxAI logo.png" alt="SalesboxAI"
+                    style="height: 120px; width: auto; max-width: 100%;">
+            </div>
+
+            <nav>
+                <div class="nav-section">
+                    <div class="nav-label">Dashboard</div>
+                    <a href="#" class="nav-item active" data-view="dashboard">
+                        <span class="nav-icon">📊</span> Overview
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-label">Tracking</div>
+                    <a href="#" class="nav-item" data-view="ai-queries">
+                        <span class="nav-icon">🔍</span> AI Overview
+                    </a>
+                    <a href="#" class="nav-item" data-view="chatgpt">
+                        <span class="nav-icon">🤖</span> ChatGPT
+                    </a>
+                </div>
+
+                <div class="nav-section admin-only" style="display: none;">
+                    <div class="nav-label">Admin</div>
+                    <a href="#" class="nav-item" data-view="clients">
+                        <span class="nav-icon">👥</span> Clients
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-label">System</div>
+                    <a href="#" class="nav-item" data-view="settings">
+                        <span class="nav-icon">⚙️</span> Settings
+                    </a>
+                </div>
+            </nav>
+
+            <!-- User Footer -->
+            <div class="sidebar-footer"
+                style="margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div class="user-avatar" id="sidebar-avatar"
+                        style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #4338ca); display: grid; place-items: center; color: white; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">
+                        A
+                    </div>
+                    <div style="overflow: hidden;">
+                        <div id="sidebar-user-name"
+                            style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            Admin</div>
+                        <div id="sidebar-user-role"
+                            style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                            Admin</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 0.5rem;"
+                    onclick="handleLogout()">
+                    Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+
+            <!-- VIEW: DASHBOARD OVERVIEW -->
+            <div id="view-dashboard" class="page-view active">
+                <header class="top-bar">
+                    <div class="page-title">
+                        <h1>AI Visibility Overview</h1>
+                        <p>Track your brand across AI platforms.</p>
+                    </div>
+                    <div class="actions">
+                        <!-- Client selector for admin -->
+                        <select id="client-filter" class="input-search admin-only"
+                            style="width: 200px; padding: 0.5rem 0.75rem; display: none;">
+                            <option value="">All Clients</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="downloadCSVReport()">Export CSV</button>
+                        <button class="btn btn-secondary" onclick="downloadAiReport()">Export PDF</button>
+                    </div>
+                </header>
+
+                <div class="bento-grid">
+                    <!-- Metric: Total Queries -->
+                    <div class="card col-span-1">
+                        <div class="metric-header">
+                            <span class="metric-label">Total Queries</span>
+                        </div>
+                        <div class="metric-value" id="stat-total-queries">0</div>
+                        <div style="font-size: 0.875rem; color: var(--text-muted);">Tracked keywords</div>
+                    </div>
+
+                    <!-- Metric: Google AI Mentions -->
+                    <div class="card col-span-1">
+                        <div class="metric-header">
+                            <span class="metric-label">Google AI Mentions</span>
+                        </div>
+                        <div class="metric-value" id="stat-google-mentions">0</div>
+                        <div style="font-size: 0.875rem; color: var(--text-muted);">AI Overview appearances</div>
+                    </div>
+
+                    <!-- Metric: ChatGPT Mentions -->
+                    <div class="card col-span-1">
+                        <div class="metric-header">
+                            <span class="metric-label">ChatGPT Mentions</span>
+                        </div>
+                        <div class="metric-value" id="stat-chatgpt-mentions">0</div>
+                        <div style="font-size: 0.875rem; color: var(--text-muted);">ChatGPT appearances</div>
+                    </div>
+
+                    <!-- Metric: Visibility Score -->
+                    <div class="card col-span-1">
+                        <div class="metric-header">
+                            <span class="metric-label">Visibility Score</span>
+                            <span class="badge" id="stat-visibility-badge">—</span>
+                        </div>
+                        <div class="metric-value" id="stat-visibility-score">—</div>
+                        <div
+                            style="width: 100%; height: 6px; background: var(--slate-100); border-radius: 99px; margin-top: 1rem;">
+                            <div id="stat-visibility-bar"
+                                style="width: 0%; height: 100%; border-radius: 99px; transition: width 0.5s;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Checks Feed -->
+                    <div class="card col-span-2 row-span-2">
+                        <div class="metric-header">
+                            <span class="metric-label">Recent Checks</span>
+                        </div>
+                        <div class="feed-container" id="recent-checks-feed"
+                            style="overflow-y: auto; max-height: 320px;">
+                            <div
+                                style="font-size: 0.875rem; color: var(--text-muted); text-align: center; margin-top: 2rem;">
+                                Loading...</div>
+                        </div>
+                    </div>
+
+                    <!-- Platform Comparison -->
+                    <div class="card col-span-2 row-span-2" style="min-height: 300px;">
+                        <div class="metric-header">
+                            <span class="metric-label">Platform Comparison</span>
+                        </div>
+                        <div style="flex:1; position: relative;">
+                            <canvas id="platformComparisonChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: AI OVERVIEW TRACKING -->
+            <div id="view-ai-queries" class="page-view" style="display: none;">
+                <header class="top-bar">
+                    <div class="page-title">
+                        <h1>AI Overview Tracking</h1>
+                        <p>Track your brand visibility in Google AI Overviews.</p>
+                    </div>
+                    <div class="actions">
+                        <select id="ai-client-filter" class="input-search admin-only"
+                            style="width: 200px; padding: 0.5rem 0.75rem; display: none;">
+                            <option value="">All Clients</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="downloadCSVReport()">Download CSV</button>
+                        <button class="btn btn-secondary" onclick="downloadAiReport()">Download PDF</button>
+                        <button class="btn btn-primary admin-only" id="add-ai-query-btn" style="display: none;">Add
+                            Query</button>
+                    </div>
+                </header>
+
+                <div class="card">
+                    <table class="fact-table" id="ai-queries-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">Query</th>
+                                <th style="width: 15%;">Brand</th>
+                                <th class="admin-only-col" style="width: 15%;">Client</th>
+                                <th style="width: 10%;">Status</th>
+                                <th style="width: 15%;">Mentioned</th>
+                                <th style="width: 20%;">Competitors Found</th>
+                                <th style="width: 15%;">Last Checked</th>
+                                <th style="width: 10%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: CHATGPT TRACKING -->
+            <div id="view-chatgpt" class="page-view" style="display: none;">
+                <header class="top-bar">
+                    <div class="page-title">
+                        <h1>ChatGPT Tracking</h1>
+                        <p>Detailed ChatGPT responses and brand mentions.</p>
+                    </div>
+                    <div class="actions">
+                        <select id="chatgpt-client-filter" class="input-search admin-only"
+                            style="width: 200px; padding: 0.5rem 0.75rem; display: none;">
+                            <option value="">All Clients</option>
+                        </select>
+                    </div>
+                </header>
+
+                <div class="card">
+                    <table class="fact-table" id="chatgpt-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">Query</th>
+                                <th style="width: 15%;">Brand</th>
+                                <th class="admin-only-col" style="width: 15%;">Client</th>
+                                <th style="width: 15%;">Mentioned</th>
+                                <th style="width: 10%;">Sentiment</th>
+                                <th style="width: 15%;">Last Checked</th>
+                                <th style="width: 10%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: CLIENT MANAGEMENT (Admin Only) -->
+            <div id="view-clients" class="page-view" style="display: none;">
+                <header class="top-bar">
+                    <div class="page-title">
+                        <h1>Client Management</h1>
+                        <p>Create and manage client accounts.</p>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-primary" id="add-client-btn">Add Client</button>
+                    </div>
+                </header>
+
+                <div class="card">
+                    <table class="fact-table" id="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Company</th>
+                                <th>Email</th>
+                                <th>Queries</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: SETTINGS -->
+            <div id="view-settings" class="page-view" style="display: none;">
+                <header class="top-bar">
+                    <div class="page-title">
+                        <h1>Settings</h1>
+                        <p>Configure API keys and preferences.</p>
+                    </div>
+                </header>
+
+                <div class="bento-grid">
+                    <div class="card col-span-2 admin-only" style="display: none;">
+                        <h3 style="margin-top: 0; margin-bottom: 1.5rem;">API Configuration</h3>
+
+                        <div style="margin-bottom: 1.25rem;">
+                            <label
+                                style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">SerpAPI
+                                Key (Google AI Overview)</label>
+                            <input type="text" id="setting-serpapi-key" class="input-search"
+                                placeholder="Enter SerpAPI key">
+                        </div>
+
+                        <div style="margin-bottom: 1.25rem;">
+                            <label
+                                style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">OpenAI
+                                API Key (ChatGPT)</label>
+                            <input type="text" id="setting-openai-key" class="input-search"
+                                placeholder="Enter OpenAI key">
+                        </div>
+
+                        <div style="margin-bottom: 1.25rem;">
+                            <label
+                                style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Default
+                                Brand Name</label>
+                            <input type="text" id="setting-brand-name" class="input-search"
+                                placeholder="e.g. SalesboxAI">
+                        </div>
+
+                        <button class="btn btn-primary" id="save-settings-btn">Save Settings</button>
+                    </div>
+
+                    <div class="card col-span-2">
+                        <h3 style="margin-top: 0; margin-bottom: 1.5rem;">Account Info</h3>
+                        <div style="margin-bottom: 0.75rem;">
+                            <span style="font-weight: 500; color: var(--text-muted);">Name: </span>
+                            <span id="setting-user-name">—</span>
+                        </div>
+                        <div style="margin-bottom: 0.75rem;">
+                            <span style="font-weight: 500; color: var(--text-muted);">Email: </span>
+                            <span id="setting-user-email">—</span>
+                        </div>
+                        <div style="margin-bottom: 0.75rem;">
+                            <span style="font-weight: 500; color: var(--text-muted);">Role: </span>
+                            <span id="setting-user-role">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Add AI Query Modal -->
+    <div class="modal-overlay" id="ai-query-modal">
+        <div class="modal-box">
+            <h2 style="margin-top: 0;">New AI Tracking Query</h2>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom: 0.5rem; font-weight: 500;">Query</label>
+                <input type="text" id="new-ai-query-text" class="input-search"
+                    placeholder="e.g. best CRM for small business">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom: 0.5rem; font-weight: 500;">Brand Name</label>
+                <input type="text" id="new-ai-query-brand" class="input-search" placeholder="e.g. SalesboxAI">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom: 0.5rem; font-weight: 500;">Location</label>
+                <select id="new-ai-query-location" class="input-search" style="padding: 0.5rem;">
+                    <option value="us">Worldwide (US)</option>
+                    <option value="ae">UAE</option>
+                    <option value="gb">United Kingdom</option>
+                    <option value="in">India</option>
+                    <option value="sa">Saudi Arabia</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 1rem;" id="query-client-assign">
+                <label style="display:block; margin-bottom: 0.5rem; font-weight: 500;">Assign to Client</label>
+                <select id="new-ai-query-client" class="input-search" style="padding: 0.5rem;">
+                    <option value="">-- Select Client --</option>
+                </select>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button class="btn btn-secondary" onclick="closeModal('ai-query-modal')">Cancel</button>
+                <button class="btn btn-primary" id="save-ai-query-btn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View AI Result Modal -->
+    <div class="modal-overlay" id="ai-result-modal">
+        <div class="modal-box" style="width: 800px; max-width: 90vw;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <h2 style="margin-top: 0;">AI Result Details</h2>
+                <button class="btn btn-secondary" onclick="closeModal('ai-result-modal')"
+                    style="padding: 0.2rem 0.6rem;">&times;</button>
+            </div>
+
+            <!-- Tabs -->
+            <div
+                style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                <button class="btn btn-secondary result-tab active-tab" data-tab="google"
+                    onclick="switchResultTab('google')">Google AI Overview</button>
+                <button class="btn btn-secondary result-tab" data-tab="chatgpt"
+                    onclick="switchResultTab('chatgpt')">ChatGPT</button>
+            </div>
+
+            <div id="ai-result-content"
+                style="max-height: 60vh; overflow-y: auto; padding: 1rem; background: var(--slate-50); border-radius: 8px;">
+                <!-- Content -->
+            </div>
+
+            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+                <button class="btn btn-primary" onclick="closeModal('ai-result-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Client Modal -->
+    <div class="modal-overlay" id="client-modal">
+        <div class="modal-box">
+            <h2 style="margin-top: 0;">New Client Account</h2>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom: 0.5rem; font-weight: 500;">Full Name</label>
+                <input type="text" id="new-client-name" class="input-search" placeholder="e.g. John Doe">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom: 0.5rem; font-weight: 500;">Company</label>
+                <input type="text" id="new-client-company" class="input-search" placeholder="e.g. Acme Corp">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom: 0.5rem; font-weight: 500;">Email</label>
+                <input type="email" id="new-client-email" class="input-search" placeholder="e.g. john@acme.com">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom: 0.5rem; font-weight: 500;">Password</label>
+                <input type="password" id="new-client-password" class="input-search" placeholder="Min 6 characters">
+            </div>
+
+            <div id="client-modal-error"
+                style="display: none; color: var(--danger-text); font-size: 0.85rem; margin-bottom: 0.75rem;"></div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button class="btn btn-secondary" onclick="closeModal('client-modal')">Cancel</button>
+                <button class="btn btn-primary" id="save-client-btn">Create Client</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden PDF Report Template -->
+    <div id="pdf-report-template" style="display: none;">
+        <div style="padding: 40px; font-family: 'Inter', sans-serif; color: #1e293b; background: #fff;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px;">
+                <div>
+                    <img src="assets/salesboxAI logo.png" style="height: 80px; width: auto;" alt="SalesboxAI">
+                    <div id="pdf-report-title"
+                        style="margin-top: 10px; font-size: 24px; font-weight: 700; color: #0f172a;">AI Visibility
+                        Report</div>
+                </div>
+                <div style="text-align: right;">
+                    <div id="report-date" style="font-size: 14px; color: #64748b;"></div>
+                    <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Generated by SalesboxAI</div>
+                </div>
+            </div>
+            <div id="pdf-stats-container"
+                style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px;"></div>
+            <h3
+                style="font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #334155; border-left: 4px solid #2563eb; padding-left: 10px;">
+                Query Performance Analysis</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead>
+                    <tr style="background-color: #f8fafc; border-bottom: 1px solid #cbd5e1;">
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #475569; width: 22%;">Query
+                        </th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #475569; width: 8%;">Brand
+                        </th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #475569; width: 6%;">Geo
+                        </th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #475569; width: 15%;">
+                            Google AI</th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #475569; width: 19%;">Top
+                            Competitors</th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #475569; width: 15%;">
+                            ChatGPT</th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #475569; width: 15%;">Last
+                            Checked</th>
+                    </tr>
+                </thead>
+                <tbody id="pdf-table-body"></tbody>
+            </table>
+            <div
+                style="margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; color: #94a3b8; font-size: 10px;">
+                Confidential &amp; Proprietary — Generated by SalesboxAI Intelligence Platform
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api-client.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,29 @@
+[
+    {
+        "date": "2025-02-09",
+        "query": "generative engine optimization",
+        "clicks": 45,
+        "impressions": 890,
+        "ctr": 5.06,
+        "position": 4.2,
+        "page": "/blog/what-is-geo"
+    },
+    {
+        "date": "2025-02-08",
+        "query": "ai marketing dubai",
+        "clicks": 32,
+        "impressions": 650,
+        "ctr": 4.92,
+        "position": 5.1,
+        "page": "/services/ai-marketing"
+    },
+    {
+        "date": "2025-02-07",
+        "query": "geo agency",
+        "clicks": 12,
+        "impressions": 150,
+        "ctr": 8.0,
+        "position": 2.5,
+        "page": "/"
+    }
+]

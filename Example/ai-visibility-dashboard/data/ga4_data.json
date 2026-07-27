@@ -1,0 +1,38 @@
+[
+    {
+        "date": "2025-02-09",
+        "source": "direct",
+        "medium": "(none)",
+        "sessions": 120,
+        "new_users": 80,
+        "conversions": 8,
+        "form_submission_source": "ChatGPT"
+    },
+    {
+        "date": "2025-02-09",
+        "source": "organic",
+        "medium": "google",
+        "sessions": 450,
+        "new_users": 300,
+        "conversions": 12,
+        "form_submission_source": "Website"
+    },
+    {
+        "date": "2025-02-08",
+        "source": "direct",
+        "medium": "(none)",
+        "sessions": 110,
+        "new_users": 75,
+        "conversions": 5,
+        "form_submission_source": "Perplexity"
+    },
+    {
+        "date": "2025-02-08",
+        "source": "referral",
+        "medium": "clutch.co",
+        "sessions": 45,
+        "new_users": 40,
+        "conversions": 2,
+        "form_submission_source": "Website"
+    }
+]

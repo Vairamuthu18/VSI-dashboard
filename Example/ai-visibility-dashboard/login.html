@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesboxAI | Login</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #312e81 70%, #1e293b 100%);
+            font-family: 'Inter', system-ui, sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background orbs */
+        body::before,
+        body::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        body::before {
+            width: 400px;
+            height: 400px;
+            background: #6366f1;
+            top: -100px;
+            right: -100px;
+        }
+
+        body::after {
+            width: 300px;
+            height: 300px;
+            background: #818cf8;
+            bottom: -80px;
+            left: -50px;
+            animation-delay: -4s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(30px, -30px) scale(1.1);
+            }
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 440px;
+            padding: 0 1.5rem;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 3rem 2.5rem;
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .login-logo img {
+            height: 80px;
+            width: auto;
+            filter: brightness(1.1);
+        }
+
+        .login-title {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.03em;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            color: #f8fafc;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .form-input::placeholder {
+            color: #64748b;
+        }
+
+        .form-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.9rem;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 0.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn:hover {
+            background: linear-gradient(135deg, #4f46e5, #4338ca);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-btn .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin: 0 auto;
+        }
+
+        .login-btn.loading .btn-text {
+            display: none;
+        }
+
+        .login-btn.loading .spinner {
+            display: block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-msg {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .error-msg.show {
+            display: block;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #475569;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <img src="assets/salesboxAI logo.png" alt="SalesboxAI">
+            </div>
+            <h1 class="login-title">Welcome Back</h1>
+            <p class="login-subtitle">Sign in to your AI Visibility Dashboard</p>
+
+            <div class="error-msg" id="login-error"></div>
+
+            <form id="login-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label class="form-label" for="login-email">Email</label>
+                    <input type="email" id="login-email" class="form-input" placeholder="you@company.com" required
+                        autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="••••••••" required
+                        autocomplete="current-password">
+                </div>
+                <button type="submit" class="login-btn" id="login-submit">
+                    <span class="btn-text">Sign In</span>
+                    <div class="spinner"></div>
+                </button>
+            </form>
+
+            <div class="login-footer">
+                &copy; 2026 SalesboxAI &middot; AI Visibility Platform
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'php/api.php';
+
+        // Check if already logged in
+        (async function checkSession() {
+            try {
+                const res = await fetch(`${API_BASE}?action=get_session`);
+                const data = await res.json();
+                if (data.authenticated) {
+                    window.location.href = 'index.html';
+                }
+            } catch (e) { }
+        })();
+
+        document.getElementById('login-form').addEventListener('submit', async function () {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            const btn = document.getElementById('login-submit');
+            const errorEl = document.getElementById('login-error');
+
+            if (!email || !password) return;
+
+            btn.classList.add('loading');
+            btn.disabled = true;
+            errorEl.classList.remove('show');
+
+            try {
+                const res = await fetch(`${API_BASE}?action=login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (data.error) {
+                    errorEl.textContent = data.error;
+                    errorEl.classList.add('show');
+                } else if (data.status === 'success') {
+                    window.location.href = 'index.html';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Connection error. Please try again.';
+                errorEl.classList.add('show');
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>
