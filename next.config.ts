@@ -59,6 +59,17 @@ const nextConfig: NextConfig = {
       headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
     },
   ],
+
+  // Redirect root URL directly to /dashboard
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/dashboard",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
