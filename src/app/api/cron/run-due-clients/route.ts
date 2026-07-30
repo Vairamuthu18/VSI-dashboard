@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runKeywordsForClient, type TrackedKeyword } from "@/lib/run-pipeline";
 
-export const maxDuration = 600; // 10 min — accommodates a full batch
+export const maxDuration = 300; // 5 min — accommodates a full batch
 export const dynamic = "force-dynamic";
 
 const FREQUENCY_HOURS: Record<string, number> = {
