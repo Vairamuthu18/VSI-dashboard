@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Bell } from "lucide-react";
+import { Search } from "lucide-react";
+import NotificationDropdown from "@/components/NotificationDropdown";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -58,10 +59,7 @@ export default function DashboardHeader({ userName }: Props) {
           <button className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-gray-200 transition-colors">
             <Search className="w-3.5 h-3.5 text-gray-500" />
           </button>
-          <Link href="/dashboard/notifications" className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-gray-200 transition-colors relative">
-            <Bell className="w-3.5 h-3.5 text-gray-500" />
-            <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
-          </Link>
+          <NotificationDropdown />
           <div className="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-sm">
             {userName.charAt(0).toUpperCase()}
           </div>

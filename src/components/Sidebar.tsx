@@ -28,6 +28,7 @@ interface Props {
   userRole: UserRole;
   userEmail: string;
   atClientCap?: boolean;
+  showSidebarProfile?: boolean;
 }
 
 const navGroups = [
@@ -55,7 +56,15 @@ const navGroups = [
   },
 ];
 
-export default function Sidebar({ agencyName, agencyLogoUrl, clients, userRole, userEmail, atClientCap = false }: Props) {
+export default function Sidebar({
+  agencyName,
+  agencyLogoUrl,
+  clients,
+  userRole,
+  userEmail,
+  atClientCap = false,
+  showSidebarProfile = false,
+}: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -75,9 +84,9 @@ export default function Sidebar({ agencyName, agencyLogoUrl, clients, userRole, 
   const onAdmin = pathname.startsWith("/admin");
 
   const sidebarContent = (
-    <>
-      {/* Brand Header */}
-      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border/80 bg-card shrink-0">
+    <div className="flex flex-col h-full min-h-0 relative overflow-hidden bg-card">
+      {/* 1. Brand Header */}
+      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border/80 bg-card shrink-0 z-10">
         <Link href="/dashboard" className="flex items-center gap-3 min-w-0 group">
           <div className="relative flex-shrink-0 p-1.5 rounded-[20px] bg-primary/10 border border-primary/20 text-primary">
             <Image src="/logo.png" alt="SearchIntel" width={26} height={26} className="shrink-0 rounded-md" />
@@ -105,8 +114,8 @@ export default function Sidebar({ agencyName, agencyLogoUrl, clients, userRole, 
         </button>
       </div>
 
-      {/* Agency Workspace Card */}
-      <div className="px-4 py-3 border-b border-border/80 bg-card/60 shrink-0">
+      {/* 2. Agency Workspace Card */}
+      <div className="px-4 py-3 border-b border-border/80 bg-card/60 shrink-0 z-10">
         <div className="flex items-center justify-between gap-2 p-2 rounded-[20px] bg-card border border-border/80 shadow-2xs">
           <div className="flex items-center gap-2.5 min-w-0">
             {agencyLogoUrl ? (
@@ -131,8 +140,8 @@ export default function Sidebar({ agencyName, agencyLogoUrl, clients, userRole, 
         </div>
       </div>
 
-      {/* Navigation Groups & Portfolio */}
-      <nav className="flex-1 min-h-0 overflow-y-auto px-3.5 py-4 space-y-6">
+      {/* 3. Navigation & Portfolio Section (Full height, natural bottom scroll) */}
+      <nav className={`flex-1 min-h-0 overflow-y-auto px-3.5 py-4 space-y-6 custom-scrollbar ${showSidebarProfile ? "pb-[140px]" : "pb-6"}`}>
         {userRole === "super_admin" && (
           <div className="space-y-1">
             <p className="px-2 text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest">ADMINISTRATION</p>
@@ -190,7 +199,7 @@ export default function Sidebar({ agencyName, agencyLogoUrl, clients, userRole, 
               href="/dashboard/clients"
               className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider transition-colors"
             >
-              All →
+              ALL →
             </Link>
           </div>
 
@@ -214,34 +223,42 @@ export default function Sidebar({ agencyName, agencyLogoUrl, clients, userRole, 
         </div>
       </nav>
 
-      {/* Profile, Theme Switcher & Sign out Footer */}
-      <div className="mx-4 mb-4 mt-auto p-4 bg-muted-bg/40 rounded-[20px] border border-border shrink-0 space-y-3 shadow-xs">
-        <div className="flex items-center justify-between px-1">
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-foreground truncate">{userEmail}</p>
-            <p className="text-[10px] text-muted-foreground capitalize font-medium">{userRole.replace("_", " ")}</p>
+      {/* 4. Bottom User Profile Card (Conditionally rendered, disabled by default) */}
+      {showSidebarProfile && (
+        <div className="sticky bottom-0 left-0 right-0 z-20 px-4 py-3 border-t border-border/80 bg-card/95 backdrop-blur-md shrink-0 shadow-lg">
+          <div className="p-3 bg-muted-bg/60 rounded-[18px] border border-border/80 space-y-2.5 shadow-2xs">
+            <div className="flex items-center justify-between gap-2 px-1">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-foreground truncate" title={userEmail}>
+                  {userEmail}
+                </p>
+                <p className="text-[10px] text-muted-foreground capitalize font-bold tracking-wide">
+                  {userRole.replace("_", " ")}
+                </p>
+              </div>
+
+              {/* Theme Toggle Icon Button */}
+              <button
+                onClick={toggleTheme}
+                type="button"
+                className="p-1.5 rounded-lg bg-card border border-border text-muted-foreground hover:text-primary transition-colors shadow-2xs shrink-0 cursor-pointer"
+                title="Toggle Light/Dark Theme"
+              >
+                {resolvedTheme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+              </button>
+            </div>
+
+            <button
+              onClick={handleSignOut}
+              type="button"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-card hover:bg-muted-bg border border-border px-3 py-2 text-xs font-bold text-foreground shadow-2xs transition-all cursor-pointer"
+            >
+              <LogOut size={14} /> Sign out
+            </button>
           </div>
-
-          {/* Theme Toggle Icon Button */}
-          <button
-            onClick={toggleTheme}
-            type="button"
-            className="p-1.5 rounded-lg bg-card border border-border text-muted-foreground hover:text-primary transition-colors shadow-2xs"
-            title="Toggle Light/Dark Theme"
-          >
-            {resolvedTheme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-          </button>
         </div>
-
-        <button
-          onClick={handleSignOut}
-          type="button"
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-card hover:bg-muted-bg border border-border px-3 py-2 text-xs font-bold text-foreground shadow-2xs transition-all"
-        >
-          <LogOut size={14} /> Sign out
-        </button>
-      </div>
-    </>
+      )}
+    </div>
   );
 
   return (
@@ -276,7 +293,7 @@ export default function Sidebar({ agencyName, agencyLogoUrl, clients, userRole, 
         className={`
           flex flex-col bg-card border-r border-border/80 
           fixed md:sticky top-0 inset-y-0 left-0 z-50
-          w-64 h-screen shrink-0
+          w-64 h-screen max-h-screen shrink-0 overflow-hidden
           transition-transform duration-200 ease-out shadow-xl md:shadow-none
           ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
         `}
@@ -319,7 +336,7 @@ function ClientList({
           />
         </div>
       )}
-      <div className="space-y-0.5 max-h-[300px] overflow-y-auto pr-0.5">
+      <div className="space-y-1">
         {filtered.length === 0 ? (
           <p className="px-2 py-1.5 text-xs text-muted-foreground italic">No matching clients.</p>
         ) : (
@@ -330,14 +347,17 @@ function ClientList({
               <Link
                 key={client.id}
                 href={`/dashboard/clients/${client.id}`}
-                className={`flex items-center justify-between gap-2 rounded-[14px] px-3 py-2 text-xs transition-all group ${
+                className={`flex items-center justify-between gap-2 rounded-[14px] px-3 py-2.5 text-xs transition-all group ${
                   active
                     ? "bg-amber-500 text-white font-bold rounded-[14px] shadow-sm"
                     : "text-muted-foreground hover:bg-muted-bg hover:text-foreground rounded-[14px]"
                 }`}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-xs">{client.name}</p>
+                  <p className="truncate font-bold text-xs">{client.name}</p>
+                  <p className="text-[10px] font-medium opacity-80 truncate">
+                    {client.agencyName ? client.agencyName : "Active"}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${

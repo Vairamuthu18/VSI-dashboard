@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Inbox, Send, File, Star, Archive, Trash2, Search as SearchIcon, 
-  Filter, Plus, Paperclip, MoreHorizontal, Mail, CheckCircle2
+  Filter, Plus, Paperclip, Mail, CheckCircle2
 } from "lucide-react";
 import { useMessages } from "@/contexts/MessagesContext";
 import { MessageFolder, Message } from "@/lib/types/messages";
@@ -13,7 +13,7 @@ import ComposeModal from "@/components/messages/ComposeModal";
 
 export default function MessagesPage() {
   const router = useRouter();
-  const { messages, activeFolder, setActiveFolder, unreadCount, markAsRead, toggleStar } = useMessages();
+  const { messages, activeFolder, setActiveFolder, unreadCount, markAsRead, toggleStar, toastMessage } = useMessages();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [isComposeOpen, setIsComposeOpen] = useState(false);
@@ -53,12 +53,14 @@ export default function MessagesPage() {
         m.subject.toLowerCase().includes(q) ||
         m.sender.name.toLowerCase().includes(q) ||
         m.sender.email.toLowerCase().includes(q) ||
+        m.recipient.name.toLowerCase().includes(q) ||
+        m.recipient.email.toLowerCase().includes(q) ||
         m.preview.toLowerCase().includes(q)
       );
     }
 
     // Sort by date (newest first)
-    return filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return [...filtered].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [messages, activeFolder, searchQuery, filterUnread]);
 
   const handleMessageClick = (msg: Message) => {
@@ -79,7 +81,31 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-[#121217] overflow-hidden">
+    <div className="flex h-[calc(100vh-64px)] bg-[#121217] overflow-hidden relative">
+      {/* Toast Notification Banner */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full bg-emerald-500 text-white font-semibold text-sm shadow-xl flex items-center gap-3"
+          >
+            <CheckCircle2 size={18} />
+            <span>{typeof toastMessage === "string" ? toastMessage : toastMessage.text}</span>
+            {typeof toastMessage === "object" && toastMessage.actionText && (
+              <button
+                onClick={toastMessage.onAction}
+                className="ml-2 px-2.5 py-0.5 rounded-md bg-white/20 hover:bg-white/30 text-white font-bold text-xs transition-colors underline cursor-pointer"
+              >
+                {toastMessage.actionText}
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
       {/* Sidebar Navigation */}
       <aside className="w-64 border-r border-border/50 hidden md:flex flex-col bg-[#1E1E23]/30">
         <div className="p-4">
@@ -158,9 +184,17 @@ export default function MessagesPage() {
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="flex flex-col items-center justify-center py-20 text-muted-foreground"
                 >
-                  <Inbox size={48} className="mb-4 opacity-20" />
-                  <p className="text-lg font-semibold">No messages found</p>
-                  <p className="text-sm opacity-60">You're all caught up in {activeFolder}.</p>
+                  <div className="text-4xl mb-3">
+                    {activeFolder === "sent" ? "📨" : "📥"}
+                  </div>
+                  <p className="text-lg font-bold text-foreground mb-1">
+                    {activeFolder === "sent" ? "No sent messages yet." : "No messages found"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {activeFolder === "sent" 
+                      ? "Messages you compose and send will appear here." 
+                      : `You're all caught up in ${activeFolder}.`}
+                  </p>
                 </motion.div>
               ) : (
                 <motion.div 
@@ -169,70 +203,73 @@ export default function MessagesPage() {
                   animate="show"
                   className="space-y-3"
                 >
-                  {filteredMessages.map(msg => (
-                    <motion.div 
-                      key={msg.id}
-                      variants={itemVariants}
-                      onClick={() => handleMessageClick(msg)}
-                      className={`group relative flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-[20px] border cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 ${
-                        msg.status === "unread" 
-                          ? "bg-[#1E1E23] border-[#FF6B00]/30 shadow-md" 
-                          : "bg-[#1E1E23]/60 border-border/40 hover:bg-[#1E1E23] hover:border-border/80"
-                      }`}
-                    >
-                      {/* Read Indicator */}
-                      {msg.status === "unread" && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#FF6B00] rounded-r-full" />
-                      )}
+                  {filteredMessages.map(msg => {
+                    const displayUser = (activeFolder === "sent" || activeFolder === "drafts") ? msg.recipient : msg.sender;
+                    return (
+                      <motion.div 
+                        key={msg.id}
+                        variants={itemVariants}
+                        onClick={() => handleMessageClick(msg)}
+                        className={`group relative flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-[20px] border cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 ${
+                          msg.status === "unread" 
+                            ? "bg-[#1E1E23] border-[#FF6B00]/30 shadow-md" 
+                            : "bg-[#1E1E23]/60 border-border/40 hover:bg-[#1E1E23] hover:border-border/80"
+                        }`}
+                      >
+                        {/* Read Indicator */}
+                        {msg.status === "unread" && (
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#FF6B00] rounded-r-full" />
+                        )}
 
-                      {/* Avatar / Actions */}
-                      <div className="flex items-center gap-3 shrink-0 sm:pl-2">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); toggleStar(msg.id); }}
-                          className={`p-1 rounded-full transition-colors ${msg.isStarred ? 'text-amber-400 hover:text-amber-500' : 'text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10'}`}
-                        >
-                          <Star size={18} fill={msg.isStarred ? "currentColor" : "none"} />
-                        </button>
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-muted-bg to-card border border-border flex items-center justify-center shrink-0 overflow-hidden text-sm font-bold text-muted-foreground">
-                          {msg.sender.avatar ? (
-                            <img src={msg.sender.avatar} alt={msg.sender.name} className="w-full h-full object-cover" />
-                          ) : (
-                            msg.sender.name.charAt(0).toUpperCase()
-                          )}
+                        {/* Avatar / Actions */}
+                        <div className="flex items-center gap-3 shrink-0 sm:pl-2">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); toggleStar(msg.id); }}
+                            className={`p-1 rounded-full transition-colors ${msg.isStarred ? 'text-amber-400 hover:text-amber-500' : 'text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10'}`}
+                          >
+                            <Star size={18} fill={msg.isStarred ? "currentColor" : "none"} />
+                          </button>
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-muted-bg to-card border border-border flex items-center justify-center shrink-0 overflow-hidden text-sm font-bold text-muted-foreground">
+                            {displayUser.avatar ? (
+                              <img src={displayUser.avatar} alt={displayUser.name} className="w-full h-full object-cover" />
+                            ) : (
+                              displayUser.name ? displayUser.name.charAt(0).toUpperCase() : "M"
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className={`text-sm truncate ${msg.status === "unread" ? 'font-bold text-foreground' : 'font-semibold text-foreground/80'}`}>
-                            {msg.sender.name}
-                          </h4>
-                          <span className={`text-xs whitespace-nowrap ml-4 ${msg.status === "unread" ? 'font-bold text-[#FF6B00]' : 'text-muted-foreground'}`}>
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className={`text-sm truncate ${msg.status === "unread" ? 'font-bold text-foreground' : 'font-semibold text-foreground/80'}`}>
+                              {(activeFolder === "sent" || activeFolder === "drafts") ? `To: ${displayUser.name || displayUser.email}` : displayUser.name}
+                            </h4>
+                            <span className={`text-xs whitespace-nowrap ml-4 ${msg.status === "unread" ? 'font-bold text-[#FF6B00]' : 'text-muted-foreground'}`}>
+                              {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-2">
+                            <span className={`text-sm font-semibold truncate ${msg.status === "unread" ? 'text-foreground/90' : 'text-muted-foreground'}`}>
+                              {msg.subject || "(No Subject)"}
+                            </span>
+                            <span className="hidden sm:inline text-xs text-muted-foreground truncate flex-1">
+                              — {msg.preview}
+                            </span>
+                          </div>
+                          <span className="sm:hidden text-xs text-muted-foreground truncate block mt-1">
+                            {msg.preview}
                           </span>
                         </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className={`text-sm font-semibold truncate ${msg.status === "unread" ? 'text-foreground/90' : 'text-muted-foreground'}`}>
-                            {msg.subject}
-                          </span>
-                          <span className="hidden sm:inline text-xs text-muted-foreground truncate flex-1">
-                            — {msg.preview}
-                          </span>
-                        </div>
-                        <span className="sm:hidden text-xs text-muted-foreground truncate block mt-1">
-                          {msg.preview}
-                        </span>
-                      </div>
 
-                      {/* Badges / Extras */}
-                      {msg.attachments && msg.attachments.length > 0 && (
-                        <div className="absolute right-4 bottom-4 sm:static flex items-center justify-center p-1.5 rounded-full bg-card border border-border text-muted-foreground">
-                          <Paperclip size={14} />
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
+                        {/* Badges / Extras */}
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <div className="absolute right-4 bottom-4 sm:static flex items-center justify-center p-1.5 rounded-full bg-card border border-border text-muted-foreground">
+                            <Paperclip size={14} />
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
                 </motion.div>
               )}
             </AnimatePresence>

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export type NotificationType = 'alert' | 'system' | 'report' | 'user';
 export type NotificationSeverity = 'high' | 'medium' | 'low' | 'info';
@@ -18,110 +19,221 @@ export interface Notification {
   relatedClient?: string;
   aiEngine?: string;
   recommendedActions: string[];
+  createdAt?: string;
 }
-
-const INITIAL_NOTIFICATIONS: Notification[] = [
-  {
-    id: "1",
-    slug: "ai-engine-visibility-drop",
-    type: "alert",
-    severity: "high",
-    title: "AI Engine Visibility Drop",
-    message: "Visibility for 'Acme Corp' dropped by 12% on ChatGPT 4o.",
-    fullDetails: "Our daily scan detected a significant 12% drop in direct citations for 'Acme Corp' across ChatGPT 4o generative search responses. This impacts 8 core commercial keywords.",
-    timestamp: "10 mins ago",
-    isRead: false,
-    relatedClient: "Acme Corp",
-    aiEngine: "ChatGPT 4o",
-    recommendedActions: ["Open Visibility Analytics", "Review Keyword Gap Analysis"]
-  },
-  {
-    id: "2",
-    slug: "weekly-citation-report",
-    type: "report",
-    severity: "info",
-    title: "Weekly Citation Report Ready",
-    message: "Your weekly AI citation performance report for Oct 12 - 19 is now available.",
-    fullDetails: "The automated weekly summary is complete. Your overall AI visibility score improved by 2.4% across the portfolio. 15 new citations were discovered for your top 3 clients.",
-    timestamp: "2 hours ago",
-    isRead: false,
-    recommendedActions: ["Open Reports Module", "Download PDF Summary"]
-  },
-  {
-    id: "3",
-    slug: "system-maintenance",
-    type: "system",
-    severity: "low",
-    title: "System Maintenance Scheduled",
-    message: "Scheduled maintenance will occur on Sunday at 2 AM UTC.",
-    fullDetails: "We will be upgrading our data processing pipelines to support faster citation indexing. Expected downtime is approximately 45 minutes.",
-    timestamp: "1 day ago",
-    isRead: true,
-    recommendedActions: ["Open System Status"]
-  },
-  {
-    id: "4",
-    slug: "new-client-onboarded",
-    type: "user",
-    severity: "info",
-    title: "New Client Onboarded",
-    message: "VG Digital has been successfully added to your tracked portfolio.",
-    fullDetails: "Initial onboarding scans have been queued. We are currently evaluating 250 initial keywords against 5 AI engines.",
-    timestamp: "2 days ago",
-    isRead: true,
-    relatedClient: "VG Digital",
-    recommendedActions: ["Open Client Profile"]
-  },
-  {
-    id: "5",
-    slug: "api-quota-warning",
-    type: "alert",
-    severity: "medium",
-    title: "API Quota Warning",
-    message: "You have consumed 90% of your monthly API limits.",
-    fullDetails: "Your agency has used 90,000 out of 100,000 monthly API requests. Consider upgrading your tier or reviewing usage to avoid throttling.",
-    timestamp: "3 days ago",
-    isRead: true,
-    recommendedActions: ["Open API Settings"]
-  },
-  {
-    id: "6",
-    slug: "competitor-alert",
-    type: "alert",
-    severity: "high",
-    title: "Competitor Alert",
-    message: "A new competitor 'Global Reach' is gaining SOV in your tracked segments.",
-    fullDetails: "Our anomaly detection flagged a rapid increase in AI citations for 'Global Reach'. They have displaced your client 'TechSolutions' in 5 key queries.",
-    timestamp: "4 days ago",
-    isRead: true,
-    recommendedActions: ["Open Competitor Benchmark"]
-  }
-];
 
 interface NotificationsContextType {
   notifications: Notification[];
+  isLoading: boolean;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   deleteNotification: (id: string) => void;
+  clearAllNotifications: () => Promise<void>;
+  createNotification: (data: Partial<Notification>) => Promise<void>;
+  refreshNotifications: () => Promise<void>;
   getNotificationBySlug: (slug: string) => Notification | undefined;
   unreadCount: number;
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
 
+const STORAGE_KEY = "enterprise_user_notifications";
+const CLEARED_KEY = "enterprise_notifications_cleared";
+
 export function NotificationsProvider({ children }: { children: ReactNode }) {
-  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  // Sync state with localStorage & DB
+  const syncState = useCallback((newList: Notification[], clearedFlag?: boolean) => {
+    setNotifications(newList);
+    if (typeof window !== "undefined") {
+      if (clearedFlag === true) {
+        localStorage.setItem(CLEARED_KEY, "true");
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+      } else {
+        if (newList.length > 0) {
+          localStorage.removeItem(CLEARED_KEY);
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
+      }
+    }
+  }, []);
+
+  // Fetch notifications from database API
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const isClearedLocally = typeof window !== "undefined" && localStorage.getItem(CLEARED_KEY) === "true";
+      
+      const res = await fetch("/api/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.notifications)) {
+          if (data.notifications.length === 0 && isClearedLocally) {
+            syncState([], true);
+          } else {
+            // Map server model to client notification interface
+            const mapped: Notification[] = data.notifications.map((n: any) => ({
+              id: n.id,
+              slug: n.slug || `notif-${n.id}`,
+              type: n.type || 'system',
+              severity: n.severity || n.priority || 'info',
+              title: n.title,
+              message: n.message || n.description || '',
+              fullDetails: n.fullDetails || n.message || '',
+              timestamp: n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
+              isRead: Boolean(n.isRead),
+              relatedClient: n.relatedClient || '',
+              aiEngine: n.aiEngine || '',
+              recommendedActions: n.recommendedActions || [],
+              createdAt: n.createdAt || new Date().toISOString(),
+            }));
+            
+            if (isClearedLocally && mapped.length === 0) {
+              syncState([], true);
+            } else {
+              syncState(mapped);
+            }
+          }
+        }
+      } else if (typeof window !== "undefined") {
+        const local = localStorage.getItem(STORAGE_KEY);
+        if (local) {
+          try {
+            setNotifications(JSON.parse(local));
+          } catch {}
+        }
+      }
+    } catch {
+      if (typeof window !== "undefined") {
+        const local = localStorage.getItem(STORAGE_KEY);
+        if (local) {
+          try {
+            setNotifications(JSON.parse(local));
+          } catch {}
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [syncState]);
+
+  // Initial Load & Realtime setup
+  useEffect(() => {
+    fetchNotifications();
+
+    // Set up Realtime listener using Supabase JS client
+    try {
+      const supabase = createClient();
+      const channel = supabase
+        .channel("realtime:notifications")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "notifications" },
+          () => {
+            fetchNotifications();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch {}
+  }, [fetchNotifications]);
+
+  // Custom event listener for instant local cross-component dispatch
+  useEffect(() => {
+    const handleNewNotifEvent = () => {
+      fetchNotifications();
+    };
+    window.addEventListener("new-notification-created", handleNewNotifEvent);
+    return () => window.removeEventListener("new-notification-created", handleNewNotifEvent);
+  }, [fetchNotifications]);
+
+  // Permanent Clear All from DB and state
+  const clearAllNotifications = async () => {
+    // 1. Optimistically clear local state and set cleared flag
+    syncState([], true);
+
+    // 2. Call DELETE /api/notifications API to purge DB rows permanently
+    try {
+      await fetch("/api/notifications", { method: "DELETE" });
+    } catch (e) {
+      console.error("Failed to delete notifications on server:", e);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  // Delete single notification
+  const deleteNotification = async (id: string) => {
+    const updated = notifications.filter(n => n.id !== id);
+    syncState(updated, updated.length === 0);
+
+    try {
+      await fetch(`/api/notifications/${id}`, { method: "DELETE" });
+    } catch {}
   };
 
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  // Mark single as read
+  const markAsRead = async (id: string) => {
+    const updated = notifications.map(n => n.id === id ? { ...n, isRead: true } : n);
+    syncState(updated);
+
+    try {
+      await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, isRead: true })
+      });
+    } catch {}
+  };
+
+  // Mark all as read
+  const markAllAsRead = async () => {
+    const updated = notifications.map(n => ({ ...n, isRead: true }));
+    syncState(updated);
+
+    try {
+      await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mark-all-read" })
+      });
+    } catch {}
+  };
+
+  // Create a new notification dynamically
+  const createNotification = async (data: Partial<Notification>) => {
+    const now = new Date();
+    const newNotif: Notification = {
+      id: data.id || `notif_${Date.now()}`,
+      slug: data.slug || `notif-${Date.now()}`,
+      type: data.type || 'system',
+      severity: data.severity || 'info',
+      title: data.title || "New Notification",
+      message: data.message || "",
+      fullDetails: data.fullDetails || data.message || "",
+      timestamp: "Just now",
+      isRead: false,
+      relatedClient: data.relatedClient || "",
+      aiEngine: data.aiEngine || "",
+      recommendedActions: data.recommendedActions || [],
+      createdAt: now.toISOString(),
+    };
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(CLEARED_KEY);
+    }
+    const updated = [newNotif, ...notifications];
+    syncState(updated);
+
+    try {
+      await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newNotif),
+      });
+    } catch {}
   };
 
   const getNotificationBySlug = (slug: string) => {
@@ -133,9 +245,13 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   return (
     <NotificationsContext.Provider value={{
       notifications,
+      isLoading,
       markAsRead,
       markAllAsRead,
       deleteNotification,
+      clearAllNotifications,
+      createNotification,
+      refreshNotifications: fetchNotifications,
       getNotificationBySlug,
       unreadCount
     }}>

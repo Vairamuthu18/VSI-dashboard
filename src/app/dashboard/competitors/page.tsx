@@ -124,7 +124,7 @@ export default function CompetitorsPage() {
             Your Brand AI Share
           </p>
           <p className="text-2xl sm:text-3xl font-extrabold text-amber-500 mt-2">
-            76.4%
+            0.0%
           </p>
           <p className="text-[11px] text-[#22C55E] font-semibold mt-1">+14.2% higher than industry avg</p>
         </div>

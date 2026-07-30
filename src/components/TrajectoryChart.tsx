@@ -14,7 +14,7 @@ const timeTabs = ["1D", "7D", "1M", "3M", "6M", "1Y", "ALL"];
 export default function TrajectoryChart({ totalKeywords, winningRate, currentRate }: TrajectoryChartProps) {
  const [activeTab, setActiveTab] = useState("1D");
 
- const baseRate = currentRate > 0 ? currentRate : 76.4;
+ const baseRate = currentRate;
  const points = React.useMemo(() => {
  const variations: Record<string, number[]> = {
  "1D": [baseRate - 12, baseRate - 8, baseRate - 14, baseRate - 5, baseRate - 7, baseRate - 2, baseRate],

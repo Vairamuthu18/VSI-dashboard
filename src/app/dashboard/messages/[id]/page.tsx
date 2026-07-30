@@ -2,18 +2,19 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, Reply, Forward, Archive, Trash2, Mail, MailOpen, 
-  MoreVertical, Star, CornerUpLeft, CornerUpRight, Paperclip, Sparkles
+  Star, CornerUpLeft, CornerUpRight, Paperclip, Sparkles, CheckCircle2, Tag
 } from "lucide-react";
 import { useMessages } from "@/contexts/MessagesContext";
 import ComposeModal from "@/components/messages/ComposeModal";
+import MessageActionMenu from "@/components/messages/MessageActionMenu";
 
 export default function MessageDetailsPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
-  const { messages, markAsRead, markAsUnread, toggleStar, moveToFolder, deleteMessage } = useMessages();
+  const { messages, markAsRead, markAsUnread, toggleStar, moveToFolder, deleteMessage, toastMessage } = useMessages();
   
   const [isComposeOpen, setIsComposeOpen] = useState(false);
 
@@ -64,7 +65,30 @@ export default function MessageDetailsPage() {
   });
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-[#121217] overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-64px)] bg-[#121217] overflow-hidden relative">
+      {/* Toast Notification Banner */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full bg-emerald-500 text-white font-semibold text-sm shadow-xl flex items-center gap-3"
+          >
+            <CheckCircle2 size={18} />
+            <span>{typeof toastMessage === "string" ? toastMessage : toastMessage.text}</span>
+            {typeof toastMessage === "object" && toastMessage.actionText && (
+              <button
+                onClick={toastMessage.onAction}
+                className="ml-2 px-2.5 py-0.5 rounded-md bg-white/20 hover:bg-white/30 text-white font-bold text-xs transition-colors underline cursor-pointer"
+              >
+                {toastMessage.actionText}
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header Toolbar */}
       <div className="h-16 border-b border-border/50 flex items-center px-4 sm:px-6 justify-between bg-[#1E1E23]/30 backdrop-blur-md">
         <div className="flex items-center gap-4">
@@ -92,10 +116,8 @@ export default function MessageDetailsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground mr-4 hidden sm:inline">1 of 50</span>
-          <button className="p-2 rounded-full hover:bg-card text-muted-foreground hover:text-foreground transition-colors">
-            <MoreVertical size={18} />
-          </button>
+          <span className="text-xs text-muted-foreground mr-4 hidden sm:inline">Message Actions</span>
+          <MessageActionMenu message={message} />
         </div>
       </div>
 
@@ -126,9 +148,15 @@ export default function MessageDetailsPage() {
                     High Priority
                   </span>
                 )}
+                {message.labels && message.labels.map(l => (
+                  <span key={l} className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-wider border border-blue-500/20 flex items-center gap-1">
+                    <Tag size={10} /> {l}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
+
 
           {/* Sender Info Area */}
           <div className="flex items-center justify-between border-b border-border/50 pb-6 mb-6 relative z-10">

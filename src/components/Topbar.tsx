@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { useMessages } from "@/contexts/MessagesContext";
+import NotificationDropdown from "@/components/NotificationDropdown";
 
 interface TopbarProps {
   userEmail: string;
@@ -146,14 +147,7 @@ export default function Topbar({ userEmail, userRole, agencyName }: TopbarProps)
             {resolvedTheme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
-          <Link
-            href="/dashboard/notifications"
-            className="relative p-2 rounded-[20px] text-muted-foreground hover:text-foreground hover:bg-muted-bg transition-colors cursor-pointer"
-            title="Notifications"
-          >
-            <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-card" />
-          </Link>
+          <NotificationDropdown />
 
           <Link
             href="/dashboard/messages"

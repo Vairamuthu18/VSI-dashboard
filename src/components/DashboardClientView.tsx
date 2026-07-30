@@ -9,6 +9,8 @@ import {
  Smile, ShieldAlert, Zap, Layers, RefreshCw, ExternalLink, Activity
 } from "lucide-react";
 import TrajectoryChart from "@/components/TrajectoryChart";
+import { Dropdown } from "@/components/Dropdown";
+import ServiceFilterDropdown from "@/components/ServiceFilterDropdown";
 import { downloadCSV, exportPrintablePDF, ExportDataRow } from "@/utils/export";
 import { SERVICE_TYPE_LABELS, ServiceType } from "@/types/search";
 
@@ -91,7 +93,7 @@ export default function DashboardClientView({
  const invisiblePercent = ((invisible / totalTracked) * 100).toFixed(0);
  const losingPercent = ((losing / totalTracked) * 100).toFixed(0);
 
- const aiVisibilityScore = results.length > 0 ? (((winning + mentioned) / totalTracked) * 100).toFixed(1) : "76.4";
+ const aiVisibilityScore = results.length > 0 ? (((winning + mentioned) / totalTracked) * 100).toFixed(1) : "0.0";
  const googleRankingOverviewCount = results.filter((r) => r.rank_position && r.rank_position <= 10).length;
 
  // Handle Export CSV
@@ -150,36 +152,36 @@ export default function DashboardClientView({
 
  {/* Global Toolbar Controls */}
  <div className="flex flex-wrap items-center gap-3">
- {/* Date Range Selector */}
- <div className="flex items-center gap-2 bg-card border border-border/80 rounded-full px-[14px] py-[6px] px-4 py-2 text-xs font-semibold text-foreground shadow-[0_15px_40px_rgba(0,0,0,0.35)] transition-all duration-250 ease-out hover:-translate-y-[3px] hover:shadow-[0_20px_60px_rgba(255,90,31,0.15)]">
- <Calendar size={14} className="text-muted-foreground" />
- <span>Date Range:</span>
- <select 
- value={dateRange} 
- onChange={(e) => setDateRange(e.target.value)}
- className="bg-transparent font-bold text-foreground text-foreground focus:outline-none cursor-pointer"
- >
- <option value="30d">Last 30 Days</option>
- <option value="7d">Last 7 Days</option>
- <option value="90d">Last 90 Days</option>
- <option value="all">All Time</option>
- </select>
- </div>
+  <Dropdown
+    variant="date-range"
+    value={dateRange}
+    onChange={setDateRange}
+    options={[
+      { value: "30d", label: "Last 30 Days" },
+      { value: "7d", label: "Last 7 Days" },
+      { value: "90d", label: "Last 90 Days" },
+      { value: "all", label: "All Time" }
+    ]}
+    trigger={
+      <div className="flex items-center gap-2 bg-card border border-border/80 rounded-full px-[14px] py-[6px] px-4 py-2 text-xs font-semibold text-foreground shadow-[0_15px_40px_rgba(0,0,0,0.35)] transition-all duration-250 ease-out hover:-translate-y-[3px] hover:shadow-[0_20px_60px_rgba(255,90,31,0.15)] outline-none">
+        <Calendar size={14} className="text-muted-foreground" />
+        <span>Date Range:</span>
+        <div className="flex items-center gap-1 font-bold text-foreground cursor-pointer">
+          <span>
+            {dateRange === "30d" ? "Last 30 Days" : 
+             dateRange === "7d" ? "Last 7 Days" : 
+             dateRange === "90d" ? "Last 90 Days" : "All Time"}
+          </span>
+        </div>
+      </div>
+    }
+  />
 
  {/* Search Filters */}
- <div className="flex items-center gap-2 bg-card border border-border/80 rounded-full px-[14px] py-[6px] px-4 py-2 text-xs font-semibold text-foreground shadow-[0_15px_40px_rgba(0,0,0,0.35)] transition-all duration-250 ease-out hover:-translate-y-[3px] hover:shadow-[0_20px_60px_rgba(255,90,31,0.15)]">
- <Filter size={14} className="text-muted-foreground" />
- <span>Filter:</span>
- <select 
- value={serviceFilter} 
- onChange={(e) => setServiceFilter(e.target.value)}
- className="bg-transparent font-bold text-foreground text-foreground focus:outline-none cursor-pointer"
- >
- <option value="all">All Services</option>
- <option value="seo">SEO Tracked</option>
- <option value="geo">GEO Tracked</option>
- </select>
- </div>
+  <ServiceFilterDropdown
+    currentValue={serviceFilter as "all" | "seo" | "geo"}
+    onSelect={(val) => setServiceFilter(val)}
+  />
 
  {/* Export Report Actions */}
  <div className="flex items-center gap-2">
